@@ -26,21 +26,43 @@
 
 from requests import get
 import json
+import socket
 collective_data = []
-with open("input.txt") as file:
-    for lines in file:
-        line_data = lines
-        split_data = line_data.split(',')
-        ipaddress = split_data[0]
-        collect_data = [ipaddress]
-        for j in range(1,len(split_data)-1,1):
-            valueip = get('https://ipapi.co/'+str(ipaddress)+'/'+str(split_data[j])+'/').text
-            collect_data.append(valueip)
-        collective_data.append(collect_data)
+def main():
+    with open("input.txt") as file:
+        for lines in file:
+            line_data = lines[:-1]
+            split_data = line_data.split(',')
+            ipaddress = split_data[0]
+            ipvalid = validateIP(ipaddress)
+            collect_data = [ipaddress]
+            if ipvalid:
+                for j in range(1,len(split_data),1):
+                    valueip = get('https://ipapi.co/'+str(ipaddress)+'/'+str(split_data[j])+'/').text
+                    if 'Not Found' in valueip or valueip == 'Undefined':
+                        valueip = 'INVALID KEY'
+                    if ',' in valueip:
+                        split_data1 = valueip.split(',')
+                        valueip = ':'.join(split_data1)
+                    collect_data.append(valueip)
+                collective_data.append(collect_data)
+            else:
+                collective_data.append(['INVALID IP'])
 
-file.close()
+    file.close()
+    with open('output.txt', 'w') as f:
+        for item in collective_data:
+            item = ','.join(item)
+            f.write("%s\n" % item)
 
-with open('output.txt', 'w') as f:
-    for item in collective_data:
-        item = ','.join(item)
-        f.write("%s\n" % item)
+def validateIP(ipdata):
+    try:
+        socket.inet_aton(ipdata)
+        return True
+    # legal
+    except socket.error:
+        return False
+    # Not legal
+
+if __name__ == "__main__":
+    main()
